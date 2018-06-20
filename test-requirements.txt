@@ -1,0 +1,5 @@
+pytest
+pipenv
+tox
+flake8
+pytest-runner
