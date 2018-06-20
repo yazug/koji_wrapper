@@ -17,7 +17,7 @@ class KojiWrapper(KojiWrapperBase):
         self._pathinfo = None
         super(KojiWrapper, self).__init__(**kwargs)
 
-    def file_types(self, nvr, types=['image']):
+    def file_types(self, nvr, types=('image')):
         """
         :param nvr: nvr of the desired build
         :param types: list of koji archive types.  This is currently any of:
