@@ -13,7 +13,13 @@ from koji_wrapper.wrapper import KojiWrapper
 sample_url = 'http://kojihub.com'
 sample_topurl = 'http://somerepo.org'
 sample_srpm_name = 'foo-bar-1.2-3.src.rpm'
+sample_package_id = 12345
+sample_package_name = 'foo-bar'
 
+
+@pytest.fixture()
+def sample_package_data():
+    return {'id': sample_package_id, 'name': sample_package_name }
 
 @pytest.fixture()
 def a_koji_wrapper():
@@ -231,3 +237,40 @@ def test_srpm_url_raises_exception(a_koji_wrapper,
         MagicMock(side_effect=Exception('Boom!'))
     with pytest.raises(Exception):
         a_koji_wrapper.srpm_url('wrongo')
+
+
+def test_base_package_none(a_koji_wrapper):
+    """
+    GIVEN we have a valid KojiBase with a session,
+    WHEN a we call KojiBase::package() with None
+    THEN we get back TypeError
+    """
+    a_koji_wrapper.session.getPackage = MagicMock(return_value=None)
+
+    with pytest.raises(TypeError):
+        a_koji_wrapper.package(None)
+
+def test_base_package_sample_package_name(a_koji_wrapper, sample_package_data):
+    """
+    GIVEN we have a valid KojiBase with a session,
+    WHEN a we call KojiBase::package() with name
+    THEN we get back dictionary
+    """
+    a_koji_wrapper.session.getPackage = MagicMock(return_value=sample_package_data)
+    b = a_koji_wrapper.package(sample_package_name)
+    assert a_koji_wrapper.session.getPackage.called
+    assert isinstance(b, dict)
+    assert 'id' in b
+
+def test_base_package_sample_package_id(a_koji_wrapper, sample_package_data):
+    """
+    GIVEN we have a valid KojiBase with a session,
+    WHEN a we call KojiBase::package() with id
+    THEN we get back dictionary
+    """
+    a_koji_wrapper.session.getPackage = MagicMock(return_value=sample_package_data)
+    b = a_koji_wrapper.package(sample_package_id)
+    assert a_koji_wrapper.session.getPackage.called
+    assert isinstance(b, dict)
+    assert 'id' in b
+

@@ -175,5 +175,24 @@ class KojiWrapperBase(object):
         """
         return self.session.listRPMs(**kwargs)
 
+    def package(self, package_info):
+        """Wraps getPackage from koji api list
+
+        :param package_info: info to identify package (id, name)
+
+        :returns: dictionary of the package info
+         """
+        return self.session.getPackage(package_info)
+
+    def package_config(self, tag, package_info):
+        """Wraps getPackageConfig from koji api list
+
+        :param tag: koji tag of interest
+        :param package_info: info to identify package (id, name)
+
+        :returns: dictionary of the package config for given tag
+        """
+        return self.session.getPackage(package_info)
+
     def _handle_exception():
         pass
