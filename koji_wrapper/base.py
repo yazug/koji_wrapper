@@ -8,6 +8,7 @@ convenience methods for interacting with the koji api.
 
 import koji
 
+from koji_wrapper.validators import validate_required
 
 class KojiWrapperBase(object):
     """
@@ -182,6 +183,8 @@ class KojiWrapperBase(object):
 
         :returns: dictionary of the package info
          """
+
+        validate_required(package_info)
         return self.session.getPackage(package_info)
 
     def package_config(self, tag, package_info):
@@ -192,7 +195,10 @@ class KojiWrapperBase(object):
 
         :returns: dictionary of the package config for given tag
         """
-        return self.session.getPackage(package_info)
+
+        validate_required(package_info)
+        validate_required(tag)
+        return self.session.getPackageConfig(tag, package_info)
 
     def _handle_exception():
         pass

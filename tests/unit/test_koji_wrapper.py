@@ -15,11 +15,21 @@ sample_topurl = 'http://somerepo.org'
 sample_srpm_name = 'foo-bar-1.2-3.src.rpm'
 sample_package_id = 12345
 sample_package_name = 'foo-bar'
+sample_tag_name = 'foo-tag'
+sample_tag_id = 9999
 
+sample_owner_name = 'jsmith'
+sample_owner_id = 123
 
 @pytest.fixture()
 def sample_package_data():
     return {'id': sample_package_id, 'name': sample_package_name }
+
+
+@pytest.fixture()
+def sample_package_config_data():
+    return {'owner_name': sample_owner_name, 'package_name': sample_package_name, 'extra_arches': None, 'package_id': sample_package_id, 'tag_id': sample_tag_id, 'tag_name': sample_tag_name, 'blocked': False, 'owner_id': sample_owner_id}
+
 
 @pytest.fixture()
 def a_koji_wrapper():
@@ -239,16 +249,20 @@ def test_srpm_url_raises_exception(a_koji_wrapper,
         a_koji_wrapper.srpm_url('wrongo')
 
 
-def test_base_package_none(a_koji_wrapper):
+@pytest.mark.parametrize('name', [None, ''])
+def test_base_package_bad(a_koji_wrapper, name):
     """
     GIVEN we have a valid KojiBase with a session,
     WHEN a we call KojiBase::package() with None
     THEN we get back TypeError
     """
-    a_koji_wrapper.session.getPackage = MagicMock(return_value=None)
+    a_koji_wrapper.session.getPackage = \
+        MagicMock(side_effect=koji.GenericError(
+            "invalid type for id lookup: <type 'NoneType'>"))
 
-    with pytest.raises(TypeError):
-        a_koji_wrapper.package(None)
+    with pytest.raises(ValueError):
+        a_koji_wrapper.package(name)
+
 
 def test_base_package_sample_package_name(a_koji_wrapper, sample_package_data):
     """
@@ -274,3 +288,32 @@ def test_base_package_sample_package_id(a_koji_wrapper, sample_package_data):
     assert isinstance(b, dict)
     assert 'id' in b
 
+@pytest.mark.parametrize('tag', [None, ''])
+@pytest.mark.parametrize('name', [None, ''])
+def test_base_package_config_bad(a_koji_wrapper, tag, name):
+    """
+    GIVEN we have a valid KojiWrapper with a session,
+    WHEN a we call KojiBase::package_config() with None
+    THEN we get back TypeError
+    """
+    a_koji_wrapper.session.getPackageConfig = \
+        MagicMock(side_effect=koji.GenericError(
+            "invalid type for id lookup: <type 'NoneType'>"))
+
+    with pytest.raises(ValueError):
+        a_koji_wrapper.package_config(tag, name)
+
+
+@pytest.mark.parametrize('tag', [sample_tag_name, sample_tag_id])
+@pytest.mark.parametrize('name', [sample_package_id, sample_package_name])
+def test_base_package_config_sample_package(a_koji_wrapper, sample_package_config_data, tag, name):
+    """
+    GIVEN we have a valid KojiBase with a session,
+    WHEN a we call KojiBase::package() with id
+    THEN we get back dictionary
+    """
+    a_koji_wrapper.session.getPackageConfig = MagicMock(return_value=sample_package_config_data)
+    b = a_koji_wrapper.package_config(tag, name)
+    assert a_koji_wrapper.session.getPackageConfig.called
+    assert isinstance(b, dict)
+    assert 'package_id' in b
