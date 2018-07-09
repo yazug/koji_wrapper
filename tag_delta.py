@@ -7,10 +7,18 @@ import sys
 
 import rpm
 
-from shale.brewtag import BrewTag
-from shale import decor
-from shale.shalerpm import splitFilename
+from toolchest import decor
+from toolchest.rpm.utils import splitFilename
 
+from koji_wrapper.tag import KojiTag
+from koji_wrapper.base import KojiWrapperBase
+
+def latest_package(koji_tag, package):
+    """Helper to wrap prior behavior from brewtag"""
+    if koji_tag.tagged_list is not None:
+        return [build['nvr'] for build in self.tagged_list if build['name'] == package][0]
+
+    return None
 
 def main():
     parser = argparse.ArgumentParser()
@@ -46,17 +54,22 @@ def main():
     rows, columns = os.popen('stty size', 'r').read().split()
     fw = str(int((int(columns)-3)/3))
 
-    ltag = BrewTag(tag=args.left_tag, inherit=do_inherit)
-    rtag = BrewTag(tag=args.right_tag, inherit=do_inherit)
+    bw = KojiWrapperBase(profile='brew')
 
-    lc = ltag.components()
-    rc = rtag.components()
+    ltag = KojiTag(tag=args.left_tag, session=bw)
+    rtag = KojiTag(tag=args.right_tag, session=bw)
+
+    ltag.builds(inherit=do_inherit, latest=True)
+    rtag.builds(inherit=do_inherit, latest=True)
+
+    lc = ltag.builds_by_attribute('name')
+    rc = rtag.builds_by_attribute('name')
     common = sorted(list(set(lc) & set(rc)))
     new_components = sorted(list(set(rc) - set(lc)))
     old_components = sorted(list(set(lc) - set(rc)))
 
-    print('%d builds in %s' % (len(lc), str(ltag)))
-    print('%d builds in %s' % (len(rc), str(rtag)))
+    print('%d builds in %s' % (len(lc), str(ltag.tag)))
+    print('%d builds in %s' % (len(rc), str(rtag.tag)))
     print('Overlap: %d packages (%f %%)' % (len(common),
                                             float(len(common)) /
                                             float(len(lc)) * 100))
@@ -67,16 +80,16 @@ def main():
 
     if sys.stdout.isatty():
         f = '%' + fw + 's %' + fw + 's %' + fw + 's'
-        print(f % ('component', str(ltag), str(rtag)))
-        print(f % (decor.line('component'), decor.line(str(ltag)),
-                   decor.line(str(rtag))))
+        print(f % ('component', str(ltag.tag), str(rtag.tag)))
+        print(f % (decor.line('component'), decor.line(str(ltag.tag)),
+                   decor.line(str(rtag.tag))))
     else:
         print()
-        print('component,' + str(ltag) + ',' + str(rtag) + ',' + 'status')
+        print('component,' + str(ltag.tag) + ',' + str(rtag.tag) + ',status')
 
     for c in common:
-        lnvr = ltag.latest_package(c)
-        rnvr = rtag.latest_package(c)
+        lnvr = latest_package(ltag, c)
+        rnvr = latest_package(rtag, c)
         (ln, lv, lr, le, la) = splitFilename(lnvr)
         (rn, rv, rr, re, ra) = splitFilename(rnvr)
 
@@ -111,7 +124,7 @@ def main():
     if show_new:
         f = '%' + fw + 's %' + fw + 's %' + fw + 's'
         for c in new_components:
-            rnvr = rtag.latest_package(c)
+            rnvr = latest_package(rtag, c)
             (rn, rv, rr, re, ra) = splitFilename(rnvr)
             rvr = rv + '-' + rr
             if sys.stdout.isatty():
@@ -122,7 +135,7 @@ def main():
     if show_removed:
         f = '%' + fw + 's %' + fw + 's %' + fw + 's'
         for c in old_components:
-            lnvr = ltag.latest_package(c)
+            lnvr = latest_package(ltag, c)
             (ln, lv, lr, le, la) = splitFilename(lnvr)
             lvr = lv + '-' + lr
             if sys.stdout.isatty():
@@ -131,8 +144,8 @@ def main():
                 print(c + ',' + lvr + ',---' + ',removed')
 
     print()
-    print('%d builds in %s' % (len(lc), str(ltag)))
-    print('%d builds in %s' % (len(rc), str(rtag)))
+    print('%d builds in %s' % (len(lc), str(ltag.tag)))
+    print('%d builds in %s' % (len(rc), str(rtag.tag)))
     print('Overlap: %d packages (%f %%)' % (len(common),
                                             float(len(common)) /
                                             float(len(lc)) * 100))
