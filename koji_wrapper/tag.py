@@ -17,7 +17,7 @@ class KojiTag(KojiWrapper):
         self.nvr_blacklist = nvr_blacklist
         self.blacklist = blacklist
         self.tagged_list = None
-        super().__init__(**kwargs)
+        super(KojiTag,self).__init__(**kwargs)
 
     @property
     def tag(self):
