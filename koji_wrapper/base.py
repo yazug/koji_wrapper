@@ -19,7 +19,7 @@ class KojiWrapperBase(object):
     """
 
     def __init__(self, url='', topurl='',
-                 profile='', user_config='', session=None):
+                 profile='', user_config=None, session=None):
         self.url = url
         self.topurl = topurl
         self.profile = profile
