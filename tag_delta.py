@@ -5,10 +5,9 @@ import argparse
 import os
 import sys
 
-import rpm
-
 from toolchest import decor
 from toolchest.rpm.utils import splitFilename
+from toolchest.rpm.utils import labelCompare
 
 from koji_wrapper.tag import KojiTag
 from koji_wrapper.base import KojiWrapperBase
@@ -93,10 +92,16 @@ def main():
         (ln, lv, lr, le, la) = splitFilename(lnvr)
         (rn, rv, rr, re, ra) = splitFilename(rnvr)
 
+        # epoch was coming back '' from splitFilename now
+        if le is '':
+            le = '0'
+        if re is '':
+            re = '0'
+
         lvr = lv + '-' + lr
         rvr = rv + '-' + rr
         rebase = False
-        v = rpm.labelCompare((le, lv, lr), (re, rv, rr))
+        v = labelCompare((le, lv, lr), (re, rv, rr))
         if v < 0 and rv != lv:
             rebase = True
 
