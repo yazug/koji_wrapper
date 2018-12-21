@@ -19,7 +19,7 @@ class KojiWrapperBase(object):
     """
 
     def __init__(self, url='', topurl='',
-                 profile='', user_config='', session=None):
+                 profile='', user_config=None, session=None):
         self.url = url
         self.topurl = topurl
         self.profile = profile
@@ -126,7 +126,7 @@ class KojiWrapperBase(object):
             _profile = koji.read_config(self.profile,
                                         user_config=self.user_config)
             """
-            NOTE: This check is here because if the user does not have and koji
+            NOTE: This check is here because if the user does not have any koji
             config files, read_config will 'helpfully' return you a useless
             default config.  The required baseurl ('server' in _profile) has a
             default, so we cannot check that.  However, topurl defaults to

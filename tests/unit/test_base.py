@@ -45,3 +45,13 @@ def test_config_throws_error_on_no_profile():
 
     with pytest.raises(koji.ConfigurationError):
         KojiWrapperBase(profile='not_a_profile')
+
+def test_userconfig_for_custom_profile_none():
+    with pytest.raises(koji.ConfigurationError):
+        KojiWrapperBase(profile='mykoji', user_config=None)
+
+def test_userconfig_for_default_profile_none():
+    tw = KojiWrapperBase(profile='koji', user_config=None)
+    assert tw.profile == 'koji'
+    assert isinstance(tw.session, koji.ClientSession)
+

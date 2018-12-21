@@ -23,23 +23,30 @@ class KojiSessionFactory(object):
         """Load a koji profile and normalize paths
 
         :param profile: Which koji profile to load
-        :param user_config: options to pass in and combine
+        :param user_config: folder or file to load from
 
         This would be used in the case where you have custom
         user_config or want to process the profile dictionary
         inspection/debugging
         """
-        try:
-            result = read_config(profile, user_config=user_config)
-            for k, v in result.items():
-                result[k] = path.expanduser(v) if type(v) is str else v
-        except ConfigurationError as err:
-            raise err
+        _profile = read_config(profile, user_config=user_config)
 
-        return result
+        """
+        NOTE: This check is here because if the user does not have any koji
+        config files, read_config will 'helpfully' return you a useless
+        default config.  The required baseurl ('server' in _profile) has a
+        default, so we cannot check that.  However, topurl defaults to
+        None, so we currently use this to devine if the returned config
+        is the useless default.
+        """
+        if not _profile.get('topurl'):
+            raise ConfigurationError("no configuration for profile \
+                    name: {0}".format(profile))
+
+        return _profile
 
     @classmethod
-    def open_session(cls, profile):
+    def open_session_profile(cls, profile):
         """open a koji ClientSession using profile config
 
         :param profile: koji profile to load
@@ -62,6 +69,14 @@ class KojiSessionFactory(object):
             except AuthError as err:
                 print("AuthError: {0}".format(err))
 
+        return session
+
+    @classmethod
+    def open_session_url(cls, url):
+        """Use provided url for opening a session"""
+        session = None
+        if url:
+            session = ClientSession(url)
         return session
 
     @classmethod
